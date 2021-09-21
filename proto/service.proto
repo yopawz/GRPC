@@ -1,0 +1,41 @@
+syntax = "proto3";
+
+package proto;
+
+option go_package =  "first-app/go-proto-grpc;go_proto_grpc";
+
+message InsertEmployeeParams {
+    string name = 1;
+    int32 age = 2;
+    int32 salary = 3;
+}
+
+message DeleteEmployeeParams {
+    int32 id = 1;
+}
+
+message GetAllEmployeesParams {
+
+}
+
+message Employee {
+    int32 id = 1;
+    string name = 2;
+    int32 age = 3;
+    int32 salary = 4;
+}
+
+message Response {
+    string message = 1;
+}
+
+message EmployeeList {
+    repeated Employee employees = 1;
+}
+
+service ManageEmployee {
+    rpc GetAllEmployees(GetAllEmployeesParams) returns (EmployeeList) {}
+    rpc InsertEmployee(InsertEmployeeParams) returns (Response) {}
+    rpc UpdateEmployee(Employee) returns (Response) {}
+    rpc DeleteEmployee(DeleteEmployeeParams) returns (Response) {}
+}

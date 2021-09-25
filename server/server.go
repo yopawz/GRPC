@@ -3,7 +3,7 @@ package main
 import (
 	"context"
 	db "first-app/database"
-	pb "first-app/proto"
+	pb "first-app/proto/grpc"
 	"log"
 	"net"
 

@@ -3,7 +3,8 @@ package database
 import (
 	"database/sql"
 	"first-app/models"
-	pb "first-app/proto"
+	pbgql "first-app/proto/gql"
+	pb "first-app/proto/grpc"
 	"fmt"
 	"log"
 	"os"
@@ -54,6 +55,72 @@ func InsertEmployee(employeeName string, employeeAge int, employeeSalary int) st
 		employeeAge, "salary", employeeSalary)
 
 	return fmt.Sprintf("Employee data with id %v inserted successfully", id)
+}
+
+func GetAllEmployeesDataWithGQL() *pbgql.EmployeeListGQL {
+	var redisClient *RedisDatabase = CreateRedisDatabase()
+	var employeeList *pbgql.EmployeeListGQL = &pbgql.EmployeeListGQL{}
+
+	var employeeIds []string
+
+	employeeIds, err := redisClient.Client.SMembers("ids").Result()
+
+	HandleError("Cannot Get Members for Employee Id", err)
+
+	if len(employeeIds) > 0 {
+		for _, id := range employeeIds {
+
+			currentEmployee, err := redisClient.Client.HGetAll(string(id)).Result()
+			HandleError("Cannot retrieve data from redis", err)
+
+			employeeId, err := strconv.Atoi(currentEmployee["id"])
+
+			HandleError("Cannot convert employee id to integer", err)
+
+			employeeAge, err := strconv.Atoi(currentEmployee["age"])
+
+			HandleError("Cannot convert employee age to integer", err)
+
+			employeeSalary, err := strconv.Atoi(currentEmployee["salary"])
+
+			HandleError("Cannot convert employee salary to integer", err)
+
+			employee := &pbgql.EmployeeGQL{Id: int32(employeeId), Name: currentEmployee["name"], Age: int32(employeeAge), Salary: int32(employeeSalary)}
+
+			employeeList.Employees = append(employeeList.Employees, employee)
+		}
+
+		return employeeList
+	}
+
+	db := CreateConnection()
+
+	defer db.Close()
+
+	sqlStatement := "SELECT * FROM employee"
+
+	rows, err := db.Query(sqlStatement)
+
+	HandleError("Cannot Executed Get Query from Database", err)
+
+	defer rows.Close()
+
+	for rows.Next() {
+		var currentEmployee models.Employee
+
+		err = rows.Scan(&currentEmployee.Id, &currentEmployee.Name, &currentEmployee.Age, &currentEmployee.Salary)
+
+		key := fmt.Sprintf("employee:%v", currentEmployee.Id)
+		redisClient.Client.Do("SADD", "ids", key)
+		redisClient.Client.Do("HSET", key, "id", currentEmployee.Id, "name", currentEmployee.Name, "age",
+			currentEmployee.Age, "salary", currentEmployee.Salary)
+
+		HandleError("Cannot Traverse Data in Employee Table", err)
+		employee := &pbgql.EmployeeGQL{Id: int32(currentEmployee.Id), Name: currentEmployee.Name, Age: int32(currentEmployee.Age), Salary: int32(currentEmployee.Salary)}
+		employeeList.Employees = append(employeeList.Employees, employee)
+	}
+
+	return employeeList
 }
 
 func GetAllEmployeesData() *pb.EmployeeList {

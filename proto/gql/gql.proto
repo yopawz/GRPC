@@ -1,0 +1,86 @@
+syntax = "proto3";
+package proto;
+
+import "proto/gql/graphql.proto";
+
+message GetAllEmployeesWithGQLParams {
+
+}
+
+message GetEmployeeWithIdWithGQLParams {
+    int32 id = 1 [(graphql.field) = {required: true}];
+}
+
+message EmployeeGQL {
+    int32 id = 1;
+    string name = 2;
+    int32 age = 3;
+    int32 salary = 4;
+}
+
+message ResponseGQL {
+    string message = 1;
+}
+
+message EmployeeListGQL {
+    repeated EmployeeGQL employees = 1;
+}
+
+message InsertEmployeeWithGQLParams {
+    string name = 1 [(graphql.field) = {required: true}];
+    int32 age = 2 [(graphql.field) = {required: true}];
+    int32 salary = 3 [(graphql.field) = {required: true}];
+}
+
+message UpdateEmployeeWithGQLParams {
+    int32 id = 1 [(graphql.field) = {required: true}];
+    string name = 2 [(graphql.field) = {required: false}];
+    int32 age = 3 [(graphql.field) = {required: false}];
+    int32 salary = 4 [(graphql.field) = {required: false}];
+}
+
+message DeleteEmployeeWithGQLParams {
+    int32 id = 1 [(graphql.field) = {required: true}];
+}
+
+service ManageEmployeeWithGQL{
+    option (graphql.service) = {
+        host: "localhost:8001"
+        insecure: true
+    };
+
+    rpc GetAllEmployeesWithGQL (GetAllEmployeesWithGQLParams) returns (EmployeeListGQL) {
+        option (graphql.schema) = {
+            type: QUERY
+            name: "getEmployees"
+        };
+    }
+
+    rpc InsertEmployeeWithGQL(InsertEmployeeWithGQLParams) returns (ResponseGQL) {
+        option (graphql.schema) = {
+            type: QUERY
+            name: "insertEmployee"
+        };
+    }
+
+    rpc UpdateEmployeeWithGQL(UpdateEmployeeWithGQLParams) returns (ResponseGQL) {
+        option (graphql.schema) = {
+            type: QUERY
+            name: "updateEmployee"
+        };
+    }
+
+    rpc DeleteEmployeeWithGQL(DeleteEmployeeWithGQLParams) returns (ResponseGQL) {
+        option (graphql.schema) = {
+            type: QUERY
+            name: "deleteEmployee"
+        };
+    }
+
+    rpc GetEmployeeWithIdWithGQL(GetEmployeeWithIdWithGQLParams) returns (EmployeeGQL) {
+        option (graphql.schema) = {
+            type: QUERY
+            name: "getEmployeeWithId"
+        };
+    }
+}

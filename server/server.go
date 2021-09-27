@@ -62,6 +62,10 @@ func (server *EmployeeManagementServer) DeleteEmployee(ctx context.Context, dele
 	return &pb.Response{Message: db.DeleteEmployee(int(deleteEmployeeParams.Id))}, nil
 }
 
+func (server *EmployeeManagementServer) GetEmployeeWithId(ctx context.Context, getEmployeeWithIdParams *pb.GetEmployeeWithIdParams) (*pb.Employee, error) {
+	return db.GetEmployeeWithID(int(getEmployeeWithIdParams.Id)), nil
+}
+
 func main() {
 	var employeeManagementServer *EmployeeManagementServer = NewEmployeeManagementServer()
 	if err := employeeManagementServer.RunEmployeeManagementServer(); err != nil {

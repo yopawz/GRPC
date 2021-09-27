@@ -6,7 +6,6 @@ import (
 	pbgql "first-app/proto/gql"
 	pb "first-app/proto/grpc"
 	"fmt"
-	"log"
 	"os"
 	"strconv"
 )
@@ -25,12 +24,7 @@ func CreateConnection() *sql.DB {
 
 	dbURI := fmt.Sprintf("host=%s user=%s dbname=%s sslmode=disable password=%s port=%s", host, user, dbName, password, dbPort)
 	db, err := sql.Open(dialect, dbURI)
-	fmt.Println(dbURI)
-	if err != nil {
-		log.Fatal(err)
-	} else {
-		fmt.Println("Success")
-	}
+	HandleError("Cannnot connect to database postgres", err)
 
 	return db
 }
@@ -234,4 +228,46 @@ func DeleteEmployee(employeeId int) string {
 	redisClient.Client.Do("SREM", "ids", key)
 
 	return deleteResponse
+}
+
+func GetEmployeeWithID(employeeId int) *pb.Employee {
+	var redisClient *RedisDatabase = CreateRedisDatabase()
+	key := fmt.Sprintf("employee:%v", employeeId)
+	employeeData, err := redisClient.Client.HGetAll(key).Result()
+	var employee *pb.Employee
+	if len(employeeData) != 0 {
+
+		HandleError("Cannot get data from redis", err)
+		employeeAge, err := strconv.Atoi(employeeData["age"])
+
+		HandleError("Cannot convert employee age to int", err)
+
+		employeeSalary, err := strconv.Atoi(employeeData["age"])
+
+		HandleError("Cannot convert employee salary to int", err)
+
+		employee = &pb.Employee{
+			Id:     int32(employeeId),
+			Name:   employeeData["name"],
+			Age:    int32(employeeAge),
+			Salary: int32(employeeSalary),
+		}
+	} else {
+		db := CreateConnection()
+
+		defer db.Close()
+
+		sqlStatement := "SELECT * FROM employee where Id = $1"
+
+		row := db.QueryRow(sqlStatement, employeeId)
+
+		HandleError("Cannot get data from database", err)
+		if row.Scan().Error() == "" {
+			err := row.Scan(&employee.Id, &employee.Name, &employee.Age, &employee.Salary)
+			HandleError("Cannot get data from database", err)
+		}
+
+	}
+
+	return employee
 }

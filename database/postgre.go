@@ -230,6 +230,48 @@ func DeleteEmployee(employeeId int) string {
 	return deleteResponse
 }
 
+func GetemployeeWithIdGQL(employeeId int) *pbgql.EmployeeGQL {
+	var redisClient *RedisDatabase = CreateRedisDatabase()
+	key := fmt.Sprintf("employee:%v", employeeId)
+	employeeData, err := redisClient.Client.HGetAll(key).Result()
+	var employee *pbgql.EmployeeGQL
+	if len(employeeData) != 0 {
+
+		HandleError("Cannot get data from redis", err)
+		employeeAge, err := strconv.Atoi(employeeData["age"])
+
+		HandleError("Cannot convert employee age to int", err)
+
+		employeeSalary, err := strconv.Atoi(employeeData["age"])
+
+		HandleError("Cannot convert employee salary to int", err)
+
+		employee = &pbgql.EmployeeGQL{
+			Id:     int32(employeeId),
+			Name:   employeeData["name"],
+			Age:    int32(employeeAge),
+			Salary: int32(employeeSalary),
+		}
+	} else {
+		db := CreateConnection()
+
+		defer db.Close()
+
+		sqlStatement := "SELECT * FROM employee where Id = $1"
+
+		row := db.QueryRow(sqlStatement, employeeId)
+
+		HandleError("Cannot get data from database", err)
+		if row.Scan().Error() == "" {
+			err := row.Scan(&employee.Id, &employee.Name, &employee.Age, &employee.Salary)
+			HandleError("Cannot get data from database", err)
+		}
+
+	}
+
+	return employee
+}
+
 func GetEmployeeWithID(employeeId int) *pb.Employee {
 	var redisClient *RedisDatabase = CreateRedisDatabase()
 	key := fmt.Sprintf("employee:%v", employeeId)

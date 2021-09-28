@@ -53,6 +53,10 @@ func (server *EmployeeManagementWithGQLServer) InsertEmployeeWithGQL(ctx context
 	}, nil
 }
 
+func (server *EmployeeManagementWithGQLServer) GetEmployeeWithIdWithGQL(ctx context.Context, getEmployeeWithIdWithGQLParams *pb.GetEmployeeWithIdWithGQLParams) (*pb.EmployeeGQL, error) {
+	return db.GetemployeeWithIdGQL(int(getEmployeeWithIdWithGQLParams.Id)), nil
+}
+
 func main() {
 	var employeeManagementServer *EmployeeManagementWithGQLServer = NewEmployeeManagementServerWithGQL()
 	if err := employeeManagementServer.RunEmployeeManagementServerWithGQL(); err != nil {
